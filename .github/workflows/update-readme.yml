@@ -18,34 +18,57 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Fetch HuggingFace Models
+            - name: Fetch HuggingFace Models
         id: fetch
         run: |
-          ORG="FlagRelease"   # 你的 HuggingFace 组织或用户名
+          ORG="FlagRelease"
           API="https://huggingface.co/api/models?author=$ORG&limit=200"
+
+          REMOVE_SUFFIXES=("-FlagOS" "-Nvidia" "-Metax" "-Iluvatar" "-Cambricon" "-Kunlunxin")
 
           echo "Fetching models for org: $ORG"
           RESP=$(curl -s "$API")
 
-          # 检查是否返回数组
           echo "$RESP" | jq 'if type=="array" then true else false end' || exit 1
 
-          # 提取 id 和 description
-          echo "$RESP" | jq -r '.[] | [.id, .cardData.description] | @tsv' > models.tsv
+          # 先提取 id + description 为 tsv
+          echo "$RESP" | jq -r '.[] | [.id, .cardData.description] | @tsv' > raw.tsv
 
-          # 生成 markdown 表格
-          echo '| 模型名 | 描述 |' > models.md
-          echo '|--------|------|' >> models.md
+          declare -A MODEL_MAP
+          declare -A DESC_MAP
 
-          while IFS=$'\t' read -r NAME DESC; do
-            DESC=${DESC:-无描述}
-            echo "| ${NAME} | ${DESC} |" >> models.md
-          done < models.tsv
+          while IFS=$'\t' read -r ID DESC; do
+            ORIG_ID="$ID"
+            CLEAN="$ID"
+
+            # 去掉给定后缀
+            for suf in "${REMOVE_SUFFIXES[@]}"; do
+              CLEAN="${CLEAN/$suf/}"
+            done
+
+            # 同名 model 合并
+            if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
+              MODEL_MAP[$CLEAN]="$ORIG_ID"
+              DESC_MAP[$CLEAN]="${DESC:-无描述}"
+            else
+              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$ORIG_ID"
+            fi
+
+          done < raw.tsv
+
+          # 生成 markdown
+          echo '| Model Name | 原始模型 | 描述 |' > models.md
+          echo '|------------|----------|------|' >> models.md
+
+          for key in "${!MODEL_MAP[@]}"; do
+            echo "| ${key} | ${MODEL_MAP[$key]} | ${DESC_MAP[$key]} |" >> models.md
+          done
 
           CONTENT=$(cat models.md)
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
 
       - name: Update README
         run: |
