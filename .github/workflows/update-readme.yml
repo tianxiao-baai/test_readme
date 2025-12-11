@@ -24,6 +24,7 @@ jobs:
           ORG="FlagRelease"
           API="https://huggingface.co/api/models?author=$ORG&limit=200"
 
+          # 需要去掉的后缀（大小写不敏感）
           REMOVE_SUFFIXES=("-FlagOS" "-Nvidia" "-Metax" "-Iluvatar" "-Cambricon" "-Kunlunxin")
 
           echo "Fetching models for org: $ORG"
@@ -39,24 +40,32 @@ jobs:
           while IFS=$'\t' read -r ID DESC; do
             ORIG_ID="$ID"
 
-            # 1) 仅获取最后一个 "/" 后的部分
+            # 1. 取最后一个 /
             BASE="${ID##*/}"
 
             CLEAN="$BASE"
 
-            # 2) 去掉给定后缀
+            # 用于大小写不敏感匹配
+            CLEAN_LOWER="${CLEAN,,}"
+
+            # 2. 去掉后缀（大小写不敏感）
             for suf in "${REMOVE_SUFFIXES[@]}"; do
-              CLEAN="${CLEAN/$suf/}"
+              suf_lower="${suf,,}"
+              if [[ "$CLEAN_LOWER" == *"$suf_lower" ]]; then
+                # 删掉干净的大小写版本
+                suf_len=${#suf}
+                CLEAN="${CLEAN:0:${#CLEAN}-${suf_len}}"
+                break
+              fi
             done
 
-            # 3) 保存合并数据
+            # 3. 保存合并数据
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
               MODEL_MAP[$CLEAN]="$ORIG_ID"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
             else
               MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$ORIG_ID"
             fi
-
           done < raw.tsv
 
           # 生成 markdown
@@ -71,8 +80,6 @@ jobs:
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-
 
       - name: Update README
         run: |
