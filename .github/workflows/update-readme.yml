@@ -30,10 +30,11 @@ jobs:
           RESP=$(curl -s "$API")
 
           echo "$RESP" | jq 'if type=="array" then true else false end' || exit 1
+
           echo "$RESP" | jq -r '.[] | [.id, .cardData.description] | @tsv' > raw.tsv
 
           declare -A MODEL_MAP
-          declare -a MODEL_ORDER  # 保持顺序
+          declare -A DESC_MAP
 
           normalize_name() {
             local full="$1"
@@ -63,39 +64,31 @@ jobs:
             CLEAN=$(normalize_name "$ID")
 
             # 生成两个超链接
-            LINK_HF="[Huggingface](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
-            LINK_MS="[Modalscope](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
-            LINK_CELL="${LINK_HF} ${LINK_MS}"
+            LINK_HF="[Huggingface: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
+            LINK_MS="[Modalscope: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
+            LINK_CELL="${LINK_HF}<br>${LINK_MS}"
 
-            # 保存原始模型名和链接
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
-              MODEL_MAP[$CLEAN]="${ORIG_ID}|${LINK_CELL}"
-              MODEL_ORDER+=("$CLEAN")
+              MODEL_MAP[$CLEAN]="$LINK_CELL"
+              DESC_MAP[$CLEAN]="${DESC:-无描述}"
             else
-              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>${ORIG_ID}|${LINK_CELL}"
+              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINK_CELL"
             fi
           done < raw.tsv
 
-          # 生成 Markdown 表格，只保留 Model Name 和 原始模型两列
-          echo '| Model Name | 原始模型 |' > models.md
-          echo '|------------|----------|' >> models.md
+          # 生成 Markdown 表格
+          echo '| Model Name | 原始模型 | 描述 |' > models.md
+          echo '|------------|----------|------|' >> models.md
 
-          for key in $(printf "%s\n" "${MODEL_ORDER[@]}" | sort -f); do
-            IFS='<br>' read -ra CELLS <<< "${MODEL_MAP[$key]}"
-            for cell in "${CELLS[@]}"; do
-              FULLNAME="${cell%%|*}"
-              LINKS="${cell##*|}"
-              # 第一行显示原始模型名字，第二行显示 Huggingface + Modalscope
-              echo "| ${key} | ${FULLNAME} |" >> models.md
-              echo "|  | ${LINKS} |" >> models.md
-            done
+          for key in $(printf "%s\n" "${!MODEL_MAP[@]}" | sort -f); do
+            echo "| ${key} | ${MODEL_MAP[$key]} | ${DESC_MAP[$key]} |" >> models.md
           done
 
           CONTENT=$(cat models.md)
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
+          
       - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
