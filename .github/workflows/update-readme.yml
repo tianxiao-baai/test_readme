@@ -68,11 +68,12 @@ jobs:
             LINK_MS="[Modalscope: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
             LINK_CELL="${LINK_HF}<br>${LINK_MS}"
 
+            # 保存到 MODEL_MAP
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
               MODEL_MAP[$CLEAN]="$LINK_CELL"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
             else
-              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINK_CELL"
+              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}||$LINK_CELL"   # 用 || 作为分隔符
             fi
           done < raw.tsv
 
@@ -81,7 +82,14 @@ jobs:
           echo '|------------|----------|------|' >> models.md
 
           for key in "${!MODEL_MAP[@]}"; do
-            echo "| ${key} | ${MODEL_MAP[$key]} | ${DESC_MAP[$key]} |" >> models.md
+            # 将原始模型拆分成多个单元格
+            IFS='||' read -ra CELLS <<< "${MODEL_MAP[$key]}"
+            LINE="| ${key} "
+            for cell in "${CELLS[@]}"; do
+              LINE+="| ${cell} "
+            done
+            LINE+="| ${DESC_MAP[$key]} |"
+            echo "$LINE" >> models.md
           done
 
           CONTENT=$(cat models.md)
