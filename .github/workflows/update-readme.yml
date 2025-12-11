@@ -77,11 +77,11 @@ jobs:
           done < raw.tsv
 
           # 生成 Markdown 表格
-          echo '| Model Name | 原始模型 | 描述 |' > models.md
-          echo '|------------|----------|------|' >> models.md
+          echo '| Model Name | 原始模型 | ' > models.md
+          echo '|------------|----------|' >> models.md
 
           for key in "${!MODEL_MAP[@]}"; do
-            echo "| ${key} | ${MODEL_MAP[$key]} | ${DESC_MAP[$key]} |" >> models.md
+            echo "| ${key} | ${MODEL_MAP[$key]} |" >> models.md
           done
 
           CONTENT=$(cat models.md)
