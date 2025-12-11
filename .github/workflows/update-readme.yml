@@ -1,9 +1,9 @@
-name: Update README Time
+name: Update README from ModelScope
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/5 * * * *"  # 每 5 分钟更新一次（可自行修改）
+    - cron: "0 */6 * * *"   # 每 6 小时更新一次，可修改
 
 jobs:
   update:
@@ -15,20 +15,52 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get current time
-        id: time
-        run: echo "now=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_OUTPUT
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Fetch ModelScope Models
+        id: fetch
+        run: |
+          ORG="FlagRelease"   # ⭐ 修改为你想抓取的 ModelScope 组织名！
+
+          echo "Fetching models for org: $ORG"
+          API="https://modelscope.cn/api/v1/models?org=${ORG}&pageSize=200"
+
+          RESP=$(curl -s "$API")
+
+          # 从 JSON 中提取字段
+          echo "$RESP" | jq -r '.Data.Models[] | [.Name, .Description] | @tsv' > models.tsv
+
+          # 生成表格 markdown
+          echo '| 模型名 | 描述 |' > models.md
+          echo '|--------|------|' >> models.md
+
+          while IFS=$'\t' read -r NAME DESC; do
+            # 处理空描述
+            DESC=${DESC:-无描述}
+            # 写入 markdown
+            echo "| ${NAME} | ${DESC} |" >> models.md
+          done < models.tsv
+
+          # 将 markdown 内容作为 Action 输出
+          CONTENT=$(cat models.md)
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Update README
         run: |
-          NOW="${{ steps.time.outputs.now }}"
-          echo "Updating to: $NOW"
-          perl -0777 -i -pe "s|<!-- START:time -->.*?<!-- END:time -->|<!-- START:time -->\n$NOW\n<!-- END:time -->|s" README.md
+          TABLE="${{ steps.fetch.outputs.content }}"
+
+          # 使用 Perl 跨行替换 START/END 区域
+          perl -0777 -i -pe \
+            "s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$TABLE\n<!-- END:models -->|s" \
+            README.md
 
       - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "update time: ${{ steps.time.outputs.now }}" || echo "No changes to commit"
+          git commit -m "update models list" || echo "No changes to commit"
           git push
