@@ -24,7 +24,6 @@ jobs:
           ORG="FlagRelease"
           API="https://huggingface.co/api/models?author=$ORG&limit=200"
 
-          # 需要去掉的后缀（大小写不敏感）
           REMOVE_SUFFIXES=("-FlagOS" "-Nvidia" "-Metax" "-Iluvatar" "-Cambricon" "-Kunlunxin")
 
           echo "Fetching models for org: $ORG"
@@ -37,18 +36,14 @@ jobs:
           declare -A MODEL_MAP
           declare -A DESC_MAP
 
-          # 函数：删除后缀（循环 + 不区分大小写）+ 去掉所有 '/' 前缀
           normalize_name() {
             local full="$1"
-
-            # 去掉 / 前缀部分
-            local clean="${full##*/}"
+            local clean="${full##*/}"   # 去掉 / 前缀
 
             local changed=1
             while [[ $changed -eq 1 ]]; do
               changed=0
               clean_lower="${clean,,}"
-
               for suf in "${REMOVE_SUFFIXES[@]}"; do
                 suf_lower="${suf,,}"
                 if [[ "$clean_lower" == *"$suf_lower"* ]]; then
@@ -61,25 +56,28 @@ jobs:
 
             clean=$(echo "$clean" | sed -E 's/-+/-/g')
             clean=$(echo "$clean" | sed -E 's/^-//; s/-$//')
-
             echo "$clean"
           }
 
           while IFS=$'\t' read -r ID DESC; do
-            # 1. 原始模型也去掉/前缀
+            # 去掉前缀
             ORIG_ID="${ID##*/}"
 
-            # 2. 获取清洗后的 model name
+            # 清洗后得到 model name
             CLEAN=$(normalize_name "$ID")
 
+            # 为原始模型生成超链接
+            LINK="[Huggingface: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
+
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
-              MODEL_MAP[$CLEAN]="$ORIG_ID"
+              MODEL_MAP[$CLEAN]="$LINK"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
             else
-              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$ORIG_ID"
+              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINK"
             fi
           done < raw.tsv
 
+          # 生成 Markdown 表格
           echo '| Model Name | 原始模型 | 描述 |' > models.md
           echo '|------------|----------|------|' >> models.md
 
