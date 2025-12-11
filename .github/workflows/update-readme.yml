@@ -37,10 +37,12 @@ jobs:
           declare -A MODEL_MAP
           declare -A DESC_MAP
 
-          # 函数：删除后缀（循环 + 不区分大小写）
+          # 函数：删除后缀（循环 + 不区分大小写）+ 去掉所有 '/' 前缀
           normalize_name() {
             local full="$1"
-            local clean="${full##*/}"   # 1. 取最后一个 /
+
+            # 去掉 / 前缀部分
+            local clean="${full##*/}"
 
             local changed=1
             while [[ $changed -eq 1 ]]; do
@@ -50,7 +52,6 @@ jobs:
               for suf in "${REMOVE_SUFFIXES[@]}"; do
                 suf_lower="${suf,,}"
                 if [[ "$clean_lower" == *"$suf_lower"* ]]; then
-                  # 删除所有位置的该后缀
                   clean=$(echo "$clean" | sed -E "s/${suf}//Ig")
                   changed=1
                   break
@@ -58,17 +59,17 @@ jobs:
               done
             done
 
-            # 清理多余 "-"
             clean=$(echo "$clean" | sed -E 's/-+/-/g')
             clean=$(echo "$clean" | sed -E 's/^-//; s/-$//')
 
             echo "$clean"
           }
 
-          # 遍历每一条模型数据
           while IFS=$'\t' read -r ID DESC; do
-            ORIG_ID="$ID"
+            # 1. 原始模型也去掉/前缀
+            ORIG_ID="${ID##*/}"
 
+            # 2. 获取清洗后的 model name
             CLEAN=$(normalize_name "$ID")
 
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
@@ -79,7 +80,6 @@ jobs:
             fi
           done < raw.tsv
 
-          # 生成 markdown
           echo '| Model Name | 原始模型 | 描述 |' > models.md
           echo '|------------|----------|------|' >> models.md
 
@@ -91,7 +91,6 @@ jobs:
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
 
       - name: Update README
         run: |
