@@ -24,7 +24,7 @@ jobs:
           ORG="FlagRelease"
           API="https://huggingface.co/api/models?author=$ORG&limit=200"
 
-          REMOVE_SUFFIXES=("-FlagOS" "-Nvidia" "-Metax" "-Iluvatar" "-Cambricon" "-Kunlunxin" "-ascend" "-hygon" "-mthreads")
+          REMOVE_SUFFIXES=("-FlagOS" "-Nvidia" "-Metax" "-Iluvatar" "-Cambricon" "-Kunlunxin")
 
           echo "Fetching models for org: $ORG"
           RESP=$(curl -s "$API")
@@ -80,7 +80,7 @@ jobs:
           echo '| Model Name | 原始模型 | 描述 |' > models.md
           echo '|------------|----------|------|' >> models.md
 
-          for key in $(printf "%s\n" "${!MODEL_MAP[@]}" | sort -f); do
+          for key in "${!MODEL_MAP[@]}"; do
             echo "| ${key} | ${MODEL_MAP[$key]} | ${DESC_MAP[$key]} |" >> models.md
           done
 
