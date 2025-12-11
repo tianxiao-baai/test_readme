@@ -1,9 +1,10 @@
 # test_readme
-# Demo: 动态时间
+# Demo: 动态 ModelScope 表格
 
-这个时间由 GitHub Actions 自动更新：
+下面的表格由 GitHub Actions 自动抓取 ModelScope 的最新模型列表并更新。
 
-## ⏰ 当前时间
-<!-- START:time -->
-2025-12-11 07:02:03
-<!-- END:time -->
+## 📦 当前 ModelScope 模型列表（自动更新）
+
+<!-- START:models -->
+正在更新模型列表...
+<!-- END:models -->
