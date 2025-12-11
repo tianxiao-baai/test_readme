@@ -49,10 +49,19 @@ jobs:
 
       - name: Update README
         run: |
-          TABLE="${{ steps.fetch.outputs.content }}"
-          echo "Updating README with the following table:"
-          echo "$TABLE"
-          perl -CS -0777 -i -pe "s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$TABLE\n<!-- END:models -->|s" README.md
+          # 写入临时表格文件
+          echo "${{ steps.fetch.outputs.content }}" > models_table.md
+
+          # 使用 Perl 跨行替换 START/END 区域
+          perl -CS -0777 -i -pe '
+            BEGIN {
+              local $/;   # slurp whole file
+              open my $fh, "<:utf8", "models_table.md" or die $!;
+              $table = <$fh>;
+              close $fh;
+            }
+            s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$table\n<!-- END:models -->|s
+          ' README.md
 
 
       - name: Commit & Push
