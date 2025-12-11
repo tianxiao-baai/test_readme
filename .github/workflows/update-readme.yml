@@ -60,20 +60,19 @@ jobs:
           }
 
           while IFS=$'\t' read -r ID DESC; do
-            # 去掉前缀
             ORIG_ID="${ID##*/}"
-
-            # 清洗后得到 model name
             CLEAN=$(normalize_name "$ID")
 
-            # 为原始模型生成超链接
-            LINK="[Huggingface: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
+            # 生成两个超链接
+            LINK_HF="[Huggingface: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
+            LINK_MS="[Modalscope: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
+            LINKS="${LINK_HF}<br>${LINK_MS}"
 
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
-              MODEL_MAP[$CLEAN]="$LINK"
+              MODEL_MAP[$CLEAN]="$LINKS"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
             else
-              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINK"
+              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINKS"
             fi
           done < raw.tsv
 
@@ -89,6 +88,7 @@ jobs:
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+ 
 
       - name: Update README
         run: |
