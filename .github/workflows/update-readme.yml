@@ -31,7 +31,6 @@ jobs:
 
           echo "$RESP" | jq 'if type=="array" then true else false end' || exit 1
 
-          # 先提取 id + description 为 tsv
           echo "$RESP" | jq -r '.[] | [.id, .cardData.description] | @tsv' > raw.tsv
 
           declare -A MODEL_MAP
@@ -39,14 +38,18 @@ jobs:
 
           while IFS=$'\t' read -r ID DESC; do
             ORIG_ID="$ID"
-            CLEAN="$ID"
 
-            # 去掉给定后缀
+            # 1) 仅获取最后一个 "/" 后的部分
+            BASE="${ID##*/}"
+
+            CLEAN="$BASE"
+
+            # 2) 去掉给定后缀
             for suf in "${REMOVE_SUFFIXES[@]}"; do
               CLEAN="${CLEAN/$suf/}"
             done
 
-            # 同名 model 合并
+            # 3) 保存合并数据
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
               MODEL_MAP[$CLEAN]="$ORIG_ID"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
@@ -68,6 +71,7 @@ jobs:
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
 
 
       - name: Update README
