@@ -66,13 +66,13 @@ jobs:
             # 生成两个超链接
             LINK_HF="[Huggingface: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
             LINK_MS="[Modalscope: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
-            LINK_CELL="${LINK_HF}<br>${LINK_MS}"
+            LINKS="${LINK_HF}<br>${LINK_MS}"
 
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
-              MODEL_MAP[$CLEAN]="$LINK_CELL"
+              MODEL_MAP[$CLEAN]="$LINKS"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
             else
-              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINK_CELL"
+              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINKS"
             fi
           done < raw.tsv
 
@@ -88,7 +88,25 @@ jobs:
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          
+ 
+
+      - name: Update README
+        run: |
+          # 写入临时表格文件
+          echo "${{ steps.fetch.outputs.content }}" > models_table.md
+
+          # 使用 Perl 跨行替换 START/END 区域
+          perl -CS -0777 -i -pe '
+            BEGIN {
+              local $/;   # slurp whole file
+              open my $fh, "<:utf8", "models_table.md" or die $!;
+              $table = <$fh>;
+              close $fh;
+            }
+            s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$table\n<!-- END:models -->|s
+          ' README.md
+
+
       - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
