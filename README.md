@@ -1,9 +1,9 @@
 # test_readme
-# Demo: å¨æ ModelScope è¡¨æ ¼
+# Demo: Ã¥ÂÂ¨Ã¦ÂÂ ModelScope Ã¨Â¡Â¨Ã¦Â Â¼
 
-ä¸é¢çè¡¨æ ¼ç± GitHub Actions èªå¨æå ModelScope çææ°æ¨¡ååè¡¨å¹¶æ´æ°ã
+Ã¤Â¸ÂÃ©ÂÂ¢Ã§ÂÂÃ¨Â¡Â¨Ã¦Â Â¼Ã§ÂÂ± GitHub Actions Ã¨ÂÂªÃ¥ÂÂ¨Ã¦ÂÂÃ¥ÂÂ ModelScope Ã§ÂÂÃ¦ÂÂÃ¦ÂÂ°Ã¦Â¨Â¡Ã¥ÂÂÃ¥ÂÂÃ¨Â¡Â¨Ã¥Â¹Â¶Ã¦ÂÂ´Ã¦ÂÂ°Ã£ÂÂ
 
-## ð¦ å½å ModelScope æ¨¡ååè¡¨ï¼èªå¨æ´æ°ï¼
+## Ã°ÂÂÂ¦ Ã¥Â½ÂÃ¥ÂÂ ModelScope Ã¦Â¨Â¡Ã¥ÂÂÃ¥ÂÂÃ¨Â¡Â¨Ã¯Â¼ÂÃ¨ÂÂªÃ¥ÂÂ¨Ã¦ÂÂ´Ã¦ÂÂ°Ã¯Â¼Â
 
 <!-- START:models -->
 | 模型名 | 描述 |
@@ -73,5 +73,6 @@
 | FlagRelease/Emu3.5-FlagOS | 无描述 |
 | FlagRelease/MiniMax-M2-FlagOS | 无描述 |
 | FlagRelease/Hunyuan-A13B-Instruct-FlagOS | 无描述 |
+| FlagRelease/Qwen3-Next-80B-A3B-Instruct-metax-FlagOS | 无描述 |
 
 <!-- END:models -->
