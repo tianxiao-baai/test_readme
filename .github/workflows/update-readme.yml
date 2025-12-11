@@ -50,7 +50,10 @@ jobs:
       - name: Update README
         run: |
           TABLE="${{ steps.fetch.outputs.content }}"
-          perl -0777 -i -pe "s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$TABLE\n<!-- END:models -->|s" README.md
+          echo "Updating README with the following table:"
+          echo "$TABLE"
+          perl -CS -0777 -i -pe "s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$TABLE\n<!-- END:models -->|s" README.md
+
 
       - name: Commit & Push
         run: |
