@@ -33,7 +33,7 @@ jobs:
           echo "$RESP" | jq -r '.[] | [.id, .cardData.description] | @tsv' > raw.tsv
 
           declare -A MODEL_MAP
-          declare -a MODEL_ORDER  # 保持顺序
+          declare -A DESC_MAP
 
           normalize_name() {
             local full="$1"
@@ -70,32 +70,24 @@ jobs:
             # 保存原始模型名和链接
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
               MODEL_MAP[$CLEAN]="${ORIG_ID}|${LINK_CELL}"
-              MODEL_ORDER+=("$CLEAN")
+              DESC_MAP[$CLEAN]="${DESC:-无描述}"
             else
               MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>${ORIG_ID}|${LINK_CELL}"
             fi
           done < raw.tsv
 
-          # 生成 Markdown 表格，只保留 Model Name 和 原始模型两列
-          echo '| Model Name | 原始模型 |' > models.md
-          echo '|------------|----------|' >> models.md
+          # 生成 Markdown 表格
+          echo '| Model Name | 原始模型 | 描述 |' > models.md
+          echo '|------------|----------|------|' >> models.md
 
-          for key in $(printf "%s\n" "${MODEL_ORDER[@]}" | sort -f); do
+          for key in $(printf "%s\n" "${!MODEL_MAP[@]}" | sort -f); do
             IFS='<br>' read -ra CELLS <<< "${MODEL_MAP[$key]}"
-            first=1
             for cell in "${CELLS[@]}"; do
               FULLNAME="${cell%%|*}"
               LINKS="${cell##*|}"
-              if [[ $first -eq 1 ]]; then
-                # 第一行显示 Model Name
-                echo "| ${key} | ${FULLNAME} |" >> models.md
-                echo "|  | ${LINKS} |" >> models.md
-                first=0
-              else
-                # 后续行只显示原始模型和链接，Model Name 列为空
-                echo "|  | ${FULLNAME} |" >> models.md
-                echo "|  | ${LINKS} |" >> models.md
-              fi
+              # 第一行显示原始模型名字，第二行显示 Huggingface + Modalscope
+              echo "| ${key} | ${FULLNAME} | ${DESC_MAP[$key]} |" >> models.md
+              echo "|  | ${LINKS} |  |" >> models.md
             done
           done
 
