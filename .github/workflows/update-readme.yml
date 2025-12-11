@@ -1,9 +1,9 @@
-name: Update README from ModelScope
+name: Update README from HuggingFace
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"   # 每 6 小时更新一次，可修改
+    - cron: "0 */6 * * *"  # 每 6 小时更新一次
 
 jobs:
   update:
@@ -18,31 +18,30 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
-      - name: Fetch ModelScope Models
+      - name: Fetch HuggingFace Models
         id: fetch
         run: |
-          ORG="FlagRelease"   # ⭐ 修改为你想抓取的 ModelScope 组织名！
+          ORG="FlagRelease"   # 你的 HuggingFace 组织或用户名
+          API="https://huggingface.co/api/models?author=$ORG&limit=200"
 
           echo "Fetching models for org: $ORG"
-          API="https://modelscope.cn/api/v1/models?org=${ORG}&pageSize=200"
-
           RESP=$(curl -s "$API")
 
-          # 从 JSON 中提取字段
-          echo "$RESP" | jq -r '.Data.Models[] | [.Name, .Description] | @tsv' > models.tsv
+          # 检查是否返回数组
+          echo "$RESP" | jq 'if type=="array" then true else false end' || exit 1
 
-          # 生成表格 markdown
+          # 提取 id 和 description
+          echo "$RESP" | jq -r '.[] | [.id, .cardData.description] | @tsv' > models.tsv
+
+          # 生成 markdown 表格
           echo '| 模型名 | 描述 |' > models.md
           echo '|--------|------|' >> models.md
 
           while IFS=$'\t' read -r NAME DESC; do
-            # 处理空描述
             DESC=${DESC:-无描述}
-            # 写入 markdown
             echo "| ${NAME} | ${DESC} |" >> models.md
           done < models.tsv
 
-          # 将 markdown 内容作为 Action 输出
           CONTENT=$(cat models.md)
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
@@ -51,16 +50,12 @@ jobs:
       - name: Update README
         run: |
           TABLE="${{ steps.fetch.outputs.content }}"
-
-          # 使用 Perl 跨行替换 START/END 区域
-          perl -0777 -i -pe \
-            "s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$TABLE\n<!-- END:models -->|s" \
-            README.md
+          perl -0777 -i -pe "s|<!-- START:models -->.*?<!-- END:models -->|<!-- START:models -->\n$TABLE\n<!-- END:models -->|s" README.md
 
       - name: Commit & Push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "update models list" || echo "No changes to commit"
+          git commit -m "update HuggingFace models list" || echo "No changes"
           git push
