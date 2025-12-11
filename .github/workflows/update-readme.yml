@@ -80,7 +80,7 @@ jobs:
           echo '| Model Name | 原始模型 | 描述 |' > models.md
           echo '|------------|----------|------|' >> models.md
 
-          for key in "${!MODEL_MAP[@]}"; do
+          for key in $(printf "%s\n" "${!MODEL_MAP[@]}" | sort); do
             echo "| ${key} | ${MODEL_MAP[$key]} | ${DESC_MAP[$key]} |" >> models.md
           done
 
