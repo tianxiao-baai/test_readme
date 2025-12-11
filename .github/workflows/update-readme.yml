@@ -35,6 +35,7 @@ jobs:
 
           declare -A MODEL_MAP
           declare -A DESC_MAP
+          declare -A MODEL_ORDER   # 记录顺序，保证 Model Name 聚在一起
 
           normalize_name() {
             local full="$1"
@@ -68,35 +69,41 @@ jobs:
             LINK_MS="[Modalscope: ${ORIG_ID}](https://modelscope.cn/models/FlagRelease/${ORIG_ID})"
             LINK_CELL="${LINK_HF}<br>${LINK_MS}"
 
-            # 保存到 MODEL_MAP
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
               MODEL_MAP[$CLEAN]="$LINK_CELL"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
+              MODEL_ORDER[$CLEAN]=1   # 记录顺序
             else
-              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}||$LINK_CELL"   # 用 || 作为分隔符
+              MODEL_MAP[$CLEAN]="${MODEL_MAP[$CLEAN]}<br>$LINK_CELL"
             fi
           done < raw.tsv
 
-          # 生成 Markdown 表格
-          echo '| Model Name | 原始模型 | 描述 |' > models.md
-          echo '|------------|----------|------|' >> models.md
+          # 生成 HTML 表格
+          echo '<table>' > models.md
+          echo '<tr><th>Model Name</th><th>原始模型</th><th>描述</th></tr>' >> models.md
 
           for key in "${!MODEL_MAP[@]}"; do
-            # 将原始模型拆分成多个单元格
-            IFS='||' read -ra CELLS <<< "${MODEL_MAP[$key]}"
-            LINE="| ${key} "
+            # 计算行数
+            IFS='<br>' read -ra CELLS <<< "${MODEL_MAP[$key]}"
+            ROWSPAN=${#CELLS[@]}
+
+            first=1
             for cell in "${CELLS[@]}"; do
-              LINE+="| ${cell} "
+              echo -n '<tr>' >> models.md
+              if [[ $first -eq 1 ]]; then
+                echo -n "<td rowspan=\"$ROWSPAN\">${key}</td>" >> models.md
+                first=0
+              fi
+              echo "<td>${cell}</td><td>${DESC_MAP[$key]}</td></tr>" >> models.md
             done
-            LINE+="| ${DESC_MAP[$key]} |"
-            echo "$LINE" >> models.md
           done
+
+          echo '</table>' >> models.md
 
           CONTENT=$(cat models.md)
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
 
       - name: Update README
         run: |
