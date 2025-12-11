@@ -1,37 +1,34 @@
 name: Update README Time
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"   # 每 30 分钟更新一次
-  workflow_dispatch:         # 手动触发
+    - cron: "*/5 * * * *"  # 每 5 分钟更新一次（可自行修改）
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get current time
         id: time
-        run: |
-          # 获取 ISO 格式 UTC 时间，你也可以换成北京时间
-          NOW=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          echo "now=$NOW" >> $GITHUB_OUTPUT
+        run: echo "now=$(date +"%Y-%m-%d %H:%M:%S")" >> $GITHUB_OUTPUT
 
       - name: Update README
         run: |
           NOW="${{ steps.time.outputs.now }}"
+          echo "Updating to: $NOW"
+          perl -0777 -i -pe "s|<!-- START:time -->.*?<!-- END:time -->|<!-- START:time -->\n$NOW\n<!-- END:time -->|s" README.md
 
-          # 用 sed 替换占位符中间的内容
-          sed -i "s|<!-- START:time -->.*<!-- END:time -->|<!-- START:time -->\n$NOW\n<!-- END:time -->|" README.md
-
-      - name: Commit changes
+      - name: Commit & Push
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md
-          git commit -m "Update time" || echo "No changes"
+          git commit -m "update time: ${{ steps.time.outputs.now }}" || echo "No changes to commit"
           git push
-
