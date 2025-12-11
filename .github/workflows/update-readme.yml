@@ -17,7 +17,7 @@ jobs:
 
       - name: Install jq
         run: sudo apt-get install -y jq
-
+      
       - name: Fetch HuggingFace Models
         id: fetch
         run: |
@@ -37,29 +37,40 @@ jobs:
           declare -A MODEL_MAP
           declare -A DESC_MAP
 
+          # 函数：删除后缀（循环 + 不区分大小写）
+          normalize_name() {
+            local full="$1"
+            local clean="${full##*/}"   # 1. 取最后一个 /
+
+            local changed=1
+            while [[ $changed -eq 1 ]]; do
+              changed=0
+              clean_lower="${clean,,}"
+
+              for suf in "${REMOVE_SUFFIXES[@]}"; do
+                suf_lower="${suf,,}"
+                if [[ "$clean_lower" == *"$suf_lower"* ]]; then
+                  # 删除所有位置的该后缀
+                  clean=$(echo "$clean" | sed -E "s/${suf}//Ig")
+                  changed=1
+                  break
+                fi
+              done
+            done
+
+            # 清理多余 "-"
+            clean=$(echo "$clean" | sed -E 's/-+/-/g')
+            clean=$(echo "$clean" | sed -E 's/^-//; s/-$//')
+
+            echo "$clean"
+          }
+
+          # 遍历每一条模型数据
           while IFS=$'\t' read -r ID DESC; do
             ORIG_ID="$ID"
 
-            # 1. 取最后一个 /
-            BASE="${ID##*/}"
+            CLEAN=$(normalize_name "$ID")
 
-            CLEAN="$BASE"
-
-            # 用于大小写不敏感匹配
-            CLEAN_LOWER="${CLEAN,,}"
-
-            # 2. 去掉后缀（大小写不敏感）
-            for suf in "${REMOVE_SUFFIXES[@]}"; do
-              suf_lower="${suf,,}"
-              if [[ "$CLEAN_LOWER" == *"$suf_lower" ]]; then
-                # 删掉干净的大小写版本
-                suf_len=${#suf}
-                CLEAN="${CLEAN:0:${#CLEAN}-${suf_len}}"
-                break
-              fi
-            done
-
-            # 3. 保存合并数据
             if [[ -z "${MODEL_MAP[$CLEAN]}" ]]; then
               MODEL_MAP[$CLEAN]="$ORIG_ID"
               DESC_MAP[$CLEAN]="${DESC:-无描述}"
@@ -80,6 +91,7 @@ jobs:
           echo "content<<EOF" >> $GITHUB_OUTPUT
           echo "$CONTENT" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
 
       - name: Update README
         run: |
