@@ -68,6 +68,7 @@
 | RoboBrain2.0-32B | [Huggingface: RoboBrain2.0-32B-FlagOS](https://modelscope.cn/models/FlagRelease/RoboBrain2.0-32B-FlagOS)<br>[Modalscope: RoboBrain2.0-32B-FlagOS](https://modelscope.cn/models/FlagRelease/RoboBrain2.0-32B-FlagOS) |
 | Qwen3-235B-A22B-Instruct-2507 | [Huggingface: Qwen3-235B-A22B-Instruct-2507-FlagOS](https://modelscope.cn/models/FlagRelease/Qwen3-235B-A22B-Instruct-2507-FlagOS)<br>[Modalscope: Qwen3-235B-A22B-Instruct-2507-FlagOS](https://modelscope.cn/models/FlagRelease/Qwen3-235B-A22B-Instruct-2507-FlagOS) |
 | Seed-OSS-36B-Instruct | [Huggingface: Seed-OSS-36B-Instruct-FlagOS](https://modelscope.cn/models/FlagRelease/Seed-OSS-36B-Instruct-FlagOS)<br>[Modalscope: Seed-OSS-36B-Instruct-FlagOS](https://modelscope.cn/models/FlagRelease/Seed-OSS-36B-Instruct-FlagOS) |
+| Qwen3-Next-80B-A3B | [Huggingface: Qwen3-Next-80B-A3B-FlagOS](https://modelscope.cn/models/FlagRelease/Qwen3-Next-80B-A3B-FlagOS)<br>[Modalscope: Qwen3-Next-80B-A3B-FlagOS](https://modelscope.cn/models/FlagRelease/Qwen3-Next-80B-A3B-FlagOS) |
 | ERNIE-4.5-300B-A47B-PT | [Huggingface: ERNIE-4.5-300B-A47B-PT-FlagOS](https://modelscope.cn/models/FlagRelease/ERNIE-4.5-300B-A47B-PT-FlagOS)<br>[Modalscope: ERNIE-4.5-300B-A47B-PT-FlagOS](https://modelscope.cn/models/FlagRelease/ERNIE-4.5-300B-A47B-PT-FlagOS) |
 
 <!-- END:models -->
